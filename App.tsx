@@ -1,118 +1,144 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
 import {
   SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+interface containerDim {
+  height: number;
+  width: number;
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+const App = () => {
+  const [currentColor, setCurrentColor] = useState<string>('#fff');
+  const [currentShapes, setCurrentShapes] = useState<Array<JSX.Element>>([]);
+  const [containerDimensions, setContainerDimensions] = useState<containerDim>({
+    height: 0,
+    width: 0,
+  });
+  const hasMounted = useRef<boolean>(false);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const getRandomDimensions = () => {
+    return [
+      Math.floor(Math.random() * 100) + 50,
+      Math.floor(Math.random() * 100) + 50,
+    ];
   };
 
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+  const getRectangle = (): JSX.Element => {
+    const [rectHeight, rectWidth] = getRandomDimensions();
+
+    const posX = Math.random() * (containerDimensions.width - rectWidth);
+    const posY = Math.random() * (containerDimensions.height - rectHeight);
+
+    return (
+      <View
+        style={[
+          styles.shape,
+          {
+            backgroundColor: currentColor,
+            height: rectHeight,
+            width: rectWidth,
+            left: posX,
+            top: posY,
+          },
+        ]}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+    );
+  };
+
+  const getCircle = (): JSX.Element => {
+    const [d] = getRandomDimensions();
+
+    const posX = Math.random() * (containerDimensions.width - d);
+    const posY = Math.random() * (containerDimensions.height - d);
+
+    return (
+      <View
+        style={[
+          styles.shape,
+          {
+            backgroundColor: currentColor,
+            height: d,
+            width: d,
+            left: posX,
+            top: posY,
+            borderRadius: '50%',
+          },
+        ]}
+      />
+    );
+  };
+
+  const generateRandomShape = () => {
+    const shape = Math.random() > 0.5 ? getRectangle() : getCircle();
+    setCurrentShapes(preV => [...preV, shape]);
+  };
+
+  const generateNewColor = () => {
+    let newColor = '#';
+    const choices = '0123456789ABCDEF';
+    for (let i = 0; i < 6; i++) {
+      newColor += choices[Math.floor(Math.random() * choices.length)];
+    }
+    setCurrentColor(newColor);
+  };
+
+  useEffect(() => {
+    if (hasMounted.current) generateRandomShape();
+    else hasMounted.current = true;
+  }, [currentColor]);
+
+  return (
+    <SafeAreaView style={{flex: 1}}>
+      <View
+        style={[styles.container, {backgroundColor: currentColor}]}
+        onLayout={event => {
+          const {height, width} = event.nativeEvent.layout;
+          setContainerDimensions({height, width});
+        }}>
+        <TouchableOpacity style={styles.btn} onPress={generateNewColor}>
+          <Text style={styles.pressMeTxt}>Press me!</Text>
+        </TouchableOpacity>
+        {currentShapes.map((Shape: JSX.Element, i) => {
+          return React.cloneElement(Shape, {key: i});
+        })}
+      </View>
     </SafeAreaView>
   );
-}
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+};
 
 export default App;
+
+const styles = StyleSheet.create({
+  pressMeTxt: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  btn: {
+    padding: 12,
+    backgroundColor: '#000',
+    borderRadius: 8,
+    elevation: 8,
+    shadowOffset: {
+      height: 2,
+      width: 2,
+    },
+    zIndex: 100,
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  shape: {
+    position: 'absolute',
+    borderWidth: 2,
+  },
+});
